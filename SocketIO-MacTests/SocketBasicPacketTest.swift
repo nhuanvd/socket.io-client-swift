@@ -71,12 +71,16 @@ class SocketBasicPacketTest: XCTestCase {
     }
     
     func testMultipleBinaryEmit() {
-        let expectedSendString = "52-[\"test\",{\"data1\":{\"_placeholder\":true,\"num\":1},\"data2\":{\"_placeholder\":true,\"num\":0}}]"
         let sendData: [Any] = ["test", ["data1": data, "data2": data2] as NSDictionary]
         let packet = SocketPacket.packetFromEmit(sendData, id: -1, nsp: "/", ack: false)
-        
-        XCTAssertEqual(packet.packetString, expectedSendString)
-        XCTAssertEqual(packet.binary, [data2, data])
+
+        let binaryObj = packet.data[1] as! [String: Any]
+        let data1Loc = (binaryObj["data1"] as! [String: Any])["num"] as! Int
+        let data2Loc = (binaryObj["data2"] as! [String: Any])["num"] as! Int
+
+        XCTAssertEqual(packet.type, .binaryEvent)
+        XCTAssertEqual(packet.binary[data1Loc], data)
+        XCTAssertEqual(packet.binary[data2Loc], data2)
     }
     
     func testEmitWithAck() {
@@ -140,12 +144,18 @@ class SocketBasicPacketTest: XCTestCase {
     }
     
     func testMultipleBinaryAck() {
-        let expectedSendString = "62-0[{\"data1\":{\"_placeholder\":true,\"num\":1},\"data2\":{\"_placeholder\":true,\"num\":0}}]"
         let sendData = [["data1": data, "data2": data2]]
         let packet = SocketPacket.packetFromEmit(sendData, id: 0, nsp: "/", ack: true)
         
-        XCTAssertEqual(packet.packetString, expectedSendString)
-        XCTAssertEqual(packet.binary, [data2, data])
+        XCTAssertEqual(packet.id, 0)
+        XCTAssertEqual(packet.type, .binaryAck)
+        
+        let binaryObj = packet.data[0] as! [String: Any]
+        let data1Loc = (binaryObj["data1"] as! [String: Any])["num"] as! Int
+        let data2Loc = (binaryObj["data2"] as! [String: Any])["num"] as! Int
+        
+        XCTAssertEqual(packet.binary[data1Loc], data)
+        XCTAssertEqual(packet.binary[data2Loc], data2)
     }
     
     func testBinaryStringPlaceholderInMessage() {
