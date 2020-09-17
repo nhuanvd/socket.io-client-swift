@@ -25,7 +25,7 @@
 import Foundation
 
 /// Protocol that is used to implement socket.io polling support
-public protocol SocketEnginePollable : SocketEngineSpec {
+public protocol SocketEnginePollableV1 : SocketEngineSpecV1 {
     /// MARK: Properties
 
     /// `true` If engine's session has been invalidated.
@@ -63,14 +63,14 @@ public protocol SocketEnginePollable : SocketEngineSpec {
     /// - parameter message: The message to send.
     /// - parameter withType: The type of message to send.
     /// - parameter withData: The data associated with this message.
-    func sendPollMessage(_ message: String, withType type: SocketEnginePacketType, withData datas: [Data])
+    func sendPollMessage(_ message: String, withType type: SocketEnginePacketTypeV1, withData datas: [Data])
 
     /// Call to stop polling and invalidate the URLSession.
     func stopPolling()
 }
 
 // Default polling methods
-extension SocketEnginePollable {
+extension SocketEnginePollableV1 {
     private func addHeaders(for req: URLRequest) -> URLRequest {
         var req = req
 
@@ -99,7 +99,7 @@ extension SocketEnginePollable {
             postStr += "\(len):\(packet)"
         }
 
-        DefaultSocketLogger.Logger.log("Created POST string: %@", type: "SocketEnginePolling", args: postStr)
+        DefaultSocketLoggerV1.Logger.log("Created POST string: %@", type: "SocketEnginePolling", args: postStr)
 
         var req = URLRequest(url: urlPollingWithSid)
         let postData = postStr.data(using: .utf8, allowLossyConversion: false)!
@@ -134,7 +134,7 @@ extension SocketEnginePollable {
             return
         }
 
-        DefaultSocketLogger.Logger.log("Doing polling %@ %@", type: "SocketEnginePolling",
+        DefaultSocketLoggerV1.Logger.log("Doing polling %@ %@", type: "SocketEnginePolling",
                                        args: req.httpMethod ?? "", req)
 
         session?.dataTask(with: req, completionHandler: callback).resume()
@@ -147,7 +147,7 @@ extension SocketEnginePollable {
             guard let this = self, this.polling else { return }
 
             if err != nil || data == nil {
-                DefaultSocketLogger.Logger.error(err?.localizedDescription ?? "Error", type: "SocketEnginePolling")
+                DefaultSocketLoggerV1.Logger.error(err?.localizedDescription ?? "Error", type: "SocketEnginePolling")
 
                 if this.polling {
                     this.didError(reason: err?.localizedDescription ?? "Error")
@@ -156,7 +156,7 @@ extension SocketEnginePollable {
                 return
             }
 
-            DefaultSocketLogger.Logger.log("Got polling response", type: "SocketEnginePolling")
+            DefaultSocketLoggerV1.Logger.log("Got polling response", type: "SocketEnginePolling")
 
             if let str = String(data: data!, encoding: String.Encoding.utf8) {
                 this.parsePollingMessage(str)
@@ -184,13 +184,13 @@ extension SocketEnginePollable {
 
         waitingForPost = true
 
-        DefaultSocketLogger.Logger.log("POSTing", type: "SocketEnginePolling")
+        DefaultSocketLoggerV1.Logger.log("POSTing", type: "SocketEnginePolling")
 
         doRequest(for: req) {[weak self] data, res, err in
             guard let this = self else { return }
 
             if err != nil {
-                DefaultSocketLogger.Logger.error(err?.localizedDescription ?? "Error", type: "SocketEnginePolling")
+                DefaultSocketLoggerV1.Logger.error(err?.localizedDescription ?? "Error", type: "SocketEnginePolling")
 
                 if this.polling {
                     this.didError(reason: err?.localizedDescription ?? "Error")
@@ -211,7 +211,7 @@ extension SocketEnginePollable {
     func parsePollingMessage(_ str: String) {
         guard str.count != 1 else { return }
 
-        var reader = SocketStringReader(message: str)
+        var reader = SocketStringReaderV1(message: str)
 
         while reader.hasNext {
             if let n = Int(reader.readUntilOccurence(of: ":")) {
@@ -230,8 +230,8 @@ extension SocketEnginePollable {
     /// - parameter message: The message to send.
     /// - parameter withType: The type of message to send.
     /// - parameter withData: The data associated with this message.
-    public func sendPollMessage(_ message: String, withType type: SocketEnginePacketType, withData datas: [Data]) {
-        DefaultSocketLogger.Logger.log("Sending poll: %@ as type: %@", type: "SocketEnginePolling", args: message, type.rawValue)
+    public func sendPollMessage(_ message: String, withType type: SocketEnginePacketTypeV1, withData datas: [Data]) {
+        DefaultSocketLoggerV1.Logger.log("Sending poll: %@ as type: %@", type: "SocketEnginePolling", args: message, type.rawValue)
         let fixedMessage: String
 
         if doubleEncodeUTF8 {

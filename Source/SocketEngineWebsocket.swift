@@ -26,7 +26,7 @@
 import Foundation
 
 /// Protocol that is used to implement socket.io WebSocket support
-public protocol SocketEngineWebsocket : SocketEngineSpec, WebSocketDelegate {
+public protocol SocketEngineWebsocket : SocketEngineSpecV1, WebSocketDelegateV1 {
     /// Sends an engine.io message through the WebSocket transport.
     ///
     /// You shouldn't call this directly, instead call the `write` method on `SocketEngine`.
@@ -34,7 +34,7 @@ public protocol SocketEngineWebsocket : SocketEngineSpec, WebSocketDelegate {
     /// - parameter message: The message to send.
     /// - parameter withType: The type of message to send.
     /// - parameter withData: The data associated with this message.
-    func sendWebSocketMessage(_ str: String, withType type: SocketEnginePacketType, withData datas: [Data])
+    func sendWebSocketMessage(_ str: String, withType type: SocketEnginePacketTypeV1, withData datas: [Data])
 }
 
 // WebSocket methods
@@ -52,8 +52,8 @@ extension SocketEngineWebsocket {
     /// - parameter message: The message to send.
     /// - parameter withType: The type of message to send.
     /// - parameter withData: The data associated with this message.
-    public func sendWebSocketMessage(_ str: String, withType type: SocketEnginePacketType, withData datas: [Data]) {
-        DefaultSocketLogger.Logger.log("Sending ws: %@ as type: %@", type: "SocketEngine", args: str, type.rawValue)
+    public func sendWebSocketMessage(_ str: String, withType type: SocketEnginePacketTypeV1, withData datas: [Data]) {
+        DefaultSocketLoggerV1.Logger.log("Sending ws: %@ as type: %@", type: "SocketEngine", args: str, type.rawValue)
 
         ws?.write(string: "\(type.rawValue)\(str)")
 
@@ -67,12 +67,12 @@ extension SocketEngineWebsocket {
     // MARK: Starscream delegate methods
 
     /// Delegate method for when a message is received.
-    public func websocketDidReceiveMessage(socket: WebSocket, text: String) {
+    public func websocketDidReceiveMessage(socket: WebSocketV1, text: String) {
         parseEngineMessage(text, fromPolling: false)
     }
 
     /// Delegate method for when binary is received.
-    public func websocketDidReceiveData(socket: WebSocket, data: Data) {
+    public func websocketDidReceiveData(socket: WebSocketV1, data: Data) {
         parseEngineData(data)
     }
 }

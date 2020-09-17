@@ -1,5 +1,5 @@
 //
-//  SocketAnyEvent.swift
+//  SocketAnyEventV2.swift
 //  Socket.IO-Client-Swift
 //
 //  Created by Erik Little on 3/28/15.
@@ -25,7 +25,7 @@
 import Foundation
 
 /// Represents some event that was received.
-public final class SocketAnyEvent : NSObject {
+public final class SocketAnyEventV2 : NSObject {
     // MARK: Properties
 
     /// The event name.

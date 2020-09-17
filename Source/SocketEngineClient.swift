@@ -1,5 +1,5 @@
 //
-//  SocketEngineClient.swift
+//  SocketEngineClientV1.swift
 //  Socket.IO-Client-Swift
 //
 //  Created by Erik Little on 3/19/15.
@@ -26,7 +26,7 @@
 import Foundation
 
 /// Declares that a type will be a delegate to an engine.
-@objc public protocol SocketEngineClient {
+@objc public protocol SocketEngineClientV1 {
     // MARK: Methods
 
     /// Called when the engine errors.

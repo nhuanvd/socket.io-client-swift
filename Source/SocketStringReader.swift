@@ -22,7 +22,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-struct SocketStringReader {
+struct SocketStringReaderV1 {
     let message: String
     var currentIndex: String.Index
     var hasNext: Bool {

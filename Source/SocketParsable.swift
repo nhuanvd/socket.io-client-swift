@@ -22,12 +22,12 @@
 
 import Foundation
 
-protocol SocketParsable {
+protocol SocketParsableV1 {
     func parseBinaryData(_ data: Data)
     func parseSocketMessage(_ message: String)
 }
 
-extension SocketParsable where Self: SocketIOClientSpec {
+extension SocketParsableV1 where Self: SocketIOClientSpecV1 {
     private func isCorrectNamespace(_ nsp: String) -> Bool {
         return nsp == self.nsp
     }
@@ -40,7 +40,7 @@ extension SocketParsable where Self: SocketIOClientSpec {
         }
     }
     
-    private func handlePacket(_ pack: SocketPacket) {
+    private func handlePacket(_ pack: SocketPacketV1) {
         switch pack.type {
         case .event where isCorrectNamespace(pack.nsp):
             handleEvent(pack.event, data: pack.args, isInternalMessage: false, withAck: pack.id)
@@ -57,20 +57,20 @@ extension SocketParsable where Self: SocketIOClientSpec {
         case .error:
             handleEvent("error", data: pack.data, isInternalMessage: true, withAck: pack.id)
         default:
-            DefaultSocketLogger.Logger.log("Got invalid packet: %@", type: "SocketParser", args: pack.description)
+            DefaultSocketLoggerV1.Logger.log("Got invalid packet: %@", type: "SocketParser", args: pack.description)
         }
     }
     
     /// Parses a messsage from the engine. Returning either a string error or a complete SocketPacket
-    func parseString(_ message: String) -> Either<String, SocketPacket> {
-        var reader = SocketStringReader(message: message)
+    func parseString(_ message: String) -> Either<String, SocketPacketV1> {
+        var reader = SocketStringReaderV1(message: message)
         
-		guard let type = Int(reader.read(count: 1)).flatMap({ SocketPacket.PacketType(rawValue: $0) }) else {
+		guard let type = Int(reader.read(count: 1)).flatMap({ SocketPacketV1.PacketType(rawValue: $0) }) else {
             return .left("Invalid packet type")
         }
         
         if !reader.hasNext {
-            return .right(SocketPacket(type: type, nsp: "/"))
+            return .right(SocketPacketV1(type: type, nsp: "/"))
         }
         
         var namespace = "/"
@@ -89,7 +89,7 @@ extension SocketParsable where Self: SocketIOClientSpec {
         }
         
         if !reader.hasNext {
-            return .right(SocketPacket(type: type, nsp: namespace, placeholders: placeholders))
+            return .right(SocketPacketV1(type: type, nsp: namespace, placeholders: placeholders))
         }
         
         var idString = ""
@@ -117,7 +117,7 @@ extension SocketParsable where Self: SocketIOClientSpec {
         case let .left(err):
             return .left(err)
         case let .right(data):
-            return .right(SocketPacket(type: type, data: data, id: Int(idString) ?? -1,
+            return .right(SocketPacketV1(type: type, data: data, id: Int(idString) ?? -1,
                 nsp: namespace, placeholders: placeholders))
         }
     }
@@ -135,20 +135,20 @@ extension SocketParsable where Self: SocketIOClientSpec {
     func parseSocketMessage(_ message: String) {
         guard !message.isEmpty else { return }
         
-        DefaultSocketLogger.Logger.log("Parsing %@", type: "SocketParser", args: message)
+        DefaultSocketLoggerV1.Logger.log("Parsing %@", type: "SocketParser", args: message)
         
         switch parseString(message) {
         case let .left(err):
-            DefaultSocketLogger.Logger.error("\(err): %@", type: "SocketParser", args: message)
+            DefaultSocketLoggerV1.Logger.error("\(err): %@", type: "SocketParser", args: message)
         case let .right(pack):
-            DefaultSocketLogger.Logger.log("Decoded packet as: %@", type: "SocketParser", args: pack.description)
+            DefaultSocketLoggerV1.Logger.log("Decoded packet as: %@", type: "SocketParser", args: pack.description)
             handlePacket(pack)
         }
     }
     
     func parseBinaryData(_ data: Data) {
         guard !waitingPackets.isEmpty else {
-            DefaultSocketLogger.Logger.error("Got data when not remaking packet", type: "SocketParser")
+            DefaultSocketLoggerV1.Logger.error("Got data when not remaking packet", type: "SocketParser")
             return
         }
         

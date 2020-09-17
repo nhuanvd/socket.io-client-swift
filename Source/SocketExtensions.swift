@@ -66,7 +66,7 @@ extension NSDictionary {
             return .handleQueue(queue)
         case let ("log", log as Bool):
             return .log(log)
-        case let ("logger", logger as SocketLogger):
+        case let ("logger", logger as SocketLoggerV1):
             return .logger(logger)
         case let ("nsp", nsp as String):
             return .nsp(nsp)
@@ -93,8 +93,8 @@ extension NSDictionary {
         }
     }
     
-    func toSocketConfiguration() -> SocketIOClientConfiguration {
-        var options = [] as SocketIOClientConfiguration
+    func toSocketConfiguration() -> SocketIOClientConfigurationV1 {
+        var options = [] as SocketIOClientConfigurationV1
         
         for (rawKey, value) in self {
             if let key = rawKey as? String, let opt = NSDictionary.keyValueToSocketIOClientOption(key: key, value: value) {

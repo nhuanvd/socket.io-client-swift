@@ -24,10 +24,10 @@
 
 import Dispatch
 
-protocol SocketIOClientSpec : class {
+protocol SocketIOClientSpecV1 : class {
     var handleQueue: DispatchQueue { get set }
     var nsp: String { get set }
-    var waitingPackets: [SocketPacket] { get set }
+    var waitingPackets: [SocketPacketV1] { get set }
 
     func didConnect()
     func didDisconnect(reason: String)
@@ -38,9 +38,9 @@ protocol SocketIOClientSpec : class {
     func joinNamespace(_ namespace: String)
 }
 
-extension SocketIOClientSpec {
+extension SocketIOClientSpecV1 {
     func didError(reason: String) {
-        DefaultSocketLogger.Logger.error("%@", type: "SocketIOClient", args: reason)
+        DefaultSocketLoggerV1.Logger.error("%@", type: "SocketIOClient", args: reason)
 
         handleClientEvent(.error, data: [reason])
     }

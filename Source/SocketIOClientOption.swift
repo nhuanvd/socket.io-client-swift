@@ -61,7 +61,7 @@ public enum SocketIOClientOption : ClientOption {
     case log(Bool)
 
     /// Used to pass in a custom logger.
-    case logger(SocketLogger)
+    case logger(SocketLoggerV1)
 
     /// The namespace that this client should connect to. Can be changed during use using the `joinNamespace`
     /// and `leaveNamespace` methods on `SocketIOClient`.

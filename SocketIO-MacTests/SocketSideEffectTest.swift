@@ -145,7 +145,7 @@ class SocketSideEffectTest: XCTestCase {
     }
 
     func testSocketManager() {
-        let manager = SocketClientManager.sharedManager
+        let manager = SocketClientManagerV1.sharedManager
         manager["test"] = socket
 
         XCTAssert(manager["test"] === socket, "failed to get socket")
@@ -158,7 +158,7 @@ class SocketSideEffectTest: XCTestCase {
 
     func testChangingStatusCallsStatusChangeHandler() {
         let expect = expectation(description: "The client should announce when the status changes")
-        let statusChange = SocketIOClientStatus.connecting
+        let statusChange = SocketIOClientStatusV1.connecting
 
         socket.on("statusChange") {data, ack in
             guard let status = data[0] as? SocketIOClientStatus else {
@@ -298,21 +298,21 @@ class SocketSideEffectTest: XCTestCase {
 
     let data = "test".data(using: String.Encoding.utf8)!
     let data2 = "test2".data(using: String.Encoding.utf8)!
-    private var socket: SocketIOClient!
+    private var socket: SocketIOClientV1!
 
     override func setUp() {
         super.setUp()
-        socket = SocketIOClient(socketURL: URL(string: "http://localhost/")!)
+        socket = SocketIOClientV1(socketURL: URL(string: "http://localhost/")!)
         socket.setTestable()
     }
 }
 
-struct ThrowingData : SocketData {
+struct ThrowingData : SocketDataV1 {
     enum ThrowingError : Error {
         case error
     }
 
-    func socketRepresentation() throws -> SocketData {
+    func socketRepresentation() throws -> SocketDataV1 {
         throw ThrowingError.error
     }
 

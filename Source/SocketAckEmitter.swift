@@ -1,5 +1,5 @@
 //
-//  SocketAckEmitter.swift
+//  SocketAckEmitterV1.swift
 //  Socket.IO-Client-Swift
 //
 //  Created by Erik Little on 9/16/15.
@@ -28,8 +28,8 @@ import Foundation
 /// A class that represents a waiting ack call.
 ///
 /// **NOTE**: You should not store this beyond the life of the event handler.
-public final class SocketAckEmitter : NSObject {
-    let socket: SocketIOClient
+public final class SocketAckEmitterV1 : NSObject {
+    let socket: SocketIOClientV1
     let ackNum: Int
 
     // MARK: Properties
@@ -39,7 +39,7 @@ public final class SocketAckEmitter : NSObject {
         return ackNum != -1
     }
 
-    init(socket: SocketIOClient, ackNum: Int) {
+    init(socket: SocketIOClientV1, ackNum: Int) {
         self.socket = socket
         self.ackNum = ackNum
     }
@@ -52,7 +52,7 @@ public final class SocketAckEmitter : NSObject {
     /// will be emitted. The structure of the error data is `[ackNum, items, theError]`
     ///
     /// - parameter items: A variable number of items to send when acking.
-    public func with(_ items: SocketData...) {
+    public func with(_ items: SocketDataV1...) {
         guard ackNum != -1 else { return }
 
         do {
@@ -82,19 +82,19 @@ public final class SocketAckEmitter : NSObject {
 ///     ...
 /// }
 /// ```
-public final class OnAckCallback : NSObject {
+public final class OnAckCallbackV1 : NSObject {
     private let ackNumber: Int
     private let items: [Any]
-    private weak var socket: SocketIOClient?
+    private weak var socket: SocketIOClientV1?
 
-    init(ackNumber: Int, items: [Any], socket: SocketIOClient) {
+    init(ackNumber: Int, items: [Any], socket: SocketIOClientV1) {
         self.ackNumber = ackNumber
         self.items = items
         self.socket = socket
     }
 
     deinit {
-        DefaultSocketLogger.Logger.log("OnAckCallback for \(ackNumber) being released", type: "OnAckCallback")
+        DefaultSocketLoggerV1.Logger.log("OnAckCallback for \(ackNumber) being released", type: "OnAckCallback")
     }
 
     // MARK: Methods
@@ -103,7 +103,7 @@ public final class OnAckCallback : NSObject {
     ///
     /// - parameter after: The number of seconds before this emit times out if an ack hasn't been received.
     /// - parameter callback: The callback called when an ack is received, or when a timeout happens.
-    ///                       To check for timeout, use `SocketAckStatus`'s `noAck` case.
+    ///                       To check for timeout, use `SocketAckStatusV1`'s `noAck` case.
     public func timingOut(after seconds: Int, callback: @escaping AckCallback) {
         guard let socket = self.socket, ackNumber != -1 else { return }
 

@@ -1,5 +1,5 @@
 //
-//  SocketAckManager.swift
+//  SocketAckManagerV1.swift
 //  Socket.IO-Client-Swift
 //
 //  Created by Erik Little on 4/3/15.
@@ -26,12 +26,12 @@ import Dispatch
 import Foundation
 
 /// The status of an ack.
-public enum SocketAckStatus : String {
+public enum SocketAckStatusV1 : String {
     /// The ack timed out.
     case noAck = "NO ACK"
 }
 
-private struct SocketAck : Hashable {
+private struct SocketAckV1 : Hashable {
     let ack: Int
     var callback: AckCallback!
     var hashValue: Int {
@@ -47,28 +47,28 @@ private struct SocketAck : Hashable {
         self.callback = callback
     }
 
-    fileprivate static func <(lhs: SocketAck, rhs: SocketAck) -> Bool {
+    fileprivate static func <(lhs: SocketAckV1, rhs: SocketAckV1) -> Bool {
         return lhs.ack < rhs.ack
     }
 
-    fileprivate static func ==(lhs: SocketAck, rhs: SocketAck) -> Bool {
+    fileprivate static func ==(lhs: SocketAckV1, rhs: SocketAckV1) -> Bool {
         return lhs.ack == rhs.ack
     }
 }
 
-struct SocketAckManager {
-    private var acks = Set<SocketAck>(minimumCapacity: 1)
+struct SocketAckManagerV1 {
+    private var acks = Set<SocketAckV1>(minimumCapacity: 1)
     private let ackSemaphore = DispatchSemaphore(value: 1)
 
     mutating func addAck(_ ack: Int, callback: @escaping AckCallback) {
-        acks.insert(SocketAck(ack: ack, callback: callback))
+        acks.insert(SocketAckV1(ack: ack, callback: callback))
     }
 
     /// Should be called on handle queue
     mutating func executeAck(_ ack: Int, with items: [Any], onQueue: DispatchQueue) {
         ackSemaphore.wait()
         defer { ackSemaphore.signal() }
-        let ack = acks.remove(SocketAck(ack: ack))
+        let ack = acks.remove(SocketAckV1(ack: ack))
 
         onQueue.async() { ack?.callback(items) }
     }
@@ -77,10 +77,10 @@ struct SocketAckManager {
     mutating func timeoutAck(_ ack: Int, onQueue: DispatchQueue) {
         ackSemaphore.wait()
         defer { ackSemaphore.signal() }
-        let ack = acks.remove(SocketAck(ack: ack))
+        let ack = acks.remove(SocketAckV1(ack: ack))
 
         onQueue.async() {
-            ack?.callback?([SocketAckStatus.noAck.rawValue])
+            ack?.callback?([SocketAckStatusV1.noAck.rawValue])
         }
     }
 }

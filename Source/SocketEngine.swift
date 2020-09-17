@@ -27,7 +27,7 @@ import Foundation
 
 /// The class that handles the engine.io protocol and transports.
 /// See `SocketEnginePollable` and `SocketEngineWebsocket` for transport specific methods.
-public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePollable, SocketEngineWebsocket {
+public final class SocketEngineV1 : NSObject, URLSessionDelegate, SocketEnginePollableV1, SocketEngineWebsocket {
     // MARK: Properties
 
     /// The queue that all engine actions take place on.
@@ -112,10 +112,10 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
     public private(set) var websocket = false
 
     /// The WebSocket for this engine.
-    public private(set) var ws: WebSocket?
+    public private(set) var ws: WebSocketV1?
 
     /// The client for this engine.
-    public weak var client: SocketEngineClient?
+    public weak var client: SocketEngineClientV1?
 
     private weak var sessionDelegate: URLSessionDelegate?
 
@@ -144,7 +144,7 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
     /// - parameter client: The client for this engine.
     /// - parameter url: The url for this engine.
     /// - parameter config: An array of configuration options for this engine.
-    public init(client: SocketEngineClient, url: URL, config: SocketIOClientConfiguration) {
+    public init(client: SocketEngineClientV1, url: URL, config: SocketIOClientConfigurationV1) {
         self.client = client
         self.url = url
         for option in config {
@@ -194,12 +194,12 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
     /// - parameter client: The client for this engine.
     /// - parameter url: The url for this engine.
     /// - parameter options: The options for this engine.
-    public convenience init(client: SocketEngineClient, url: URL, options: NSDictionary?) {
+    public convenience init(client: SocketEngineClientV1, url: URL, options: NSDictionary?) {
         self.init(client: client, url: url, config: options?.toSocketConfiguration() ?? [])
     }
 
     deinit {
-        DefaultSocketLogger.Logger.log("Engine is being released", type: logType)
+        DefaultSocketLoggerV1.Logger.log("Engine is being released", type: logType)
         closed = true
         stopPolling()
     }
@@ -252,12 +252,12 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
 
     private func _connect() {
         if connected {
-            DefaultSocketLogger.Logger.error("Engine tried opening while connected. Assuming this was a reconnect", type: logType)
+            DefaultSocketLoggerV1.Logger.error("Engine tried opening while connected. Assuming this was a reconnect", type: logType)
             disconnect(reason: "reconnect")
         }
 
-        DefaultSocketLogger.Logger.log("Starting engine. Server: %@", type: logType, args: url)
-        DefaultSocketLogger.Logger.log("Handshaking", type: logType)
+        DefaultSocketLoggerV1.Logger.log("Starting engine. Server: %@", type: logType, args: url)
+        DefaultSocketLoggerV1.Logger.log("Handshaking", type: logType)
 
         resetEngine()
 
@@ -321,7 +321,7 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
 
     private func createWebsocketAndConnect() {
         ws?.delegate = nil
-        ws = WebSocket(url: urlWebSocketWithSid as URL)
+        ws = WebSocketV1(url: urlWebSocketWithSid as URL)
 
         if cookies != nil {
             let headers = HTTPCookie.requestHeaderFields(with: cookies!)
@@ -347,7 +347,7 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
 
     /// Called when an error happens during execution. Causes a disconnection.
     public func didError(reason: String) {
-        DefaultSocketLogger.Logger.error("%@", type: logType, args: reason)
+        DefaultSocketLoggerV1.Logger.error("%@", type: logType, args: reason)
         client?.engineDidError(reason: reason)
         disconnect(reason: reason)
     }
@@ -364,7 +364,7 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
     private func _disconnect(reason: String) {
         guard connected else { return closeOutEngine(reason: reason) }
 
-        DefaultSocketLogger.Logger.log("Engine is being closed.", type: logType)
+        DefaultSocketLoggerV1.Logger.log("Engine is being closed.", type: logType)
 
         if closed {
             return closeOutEngine(reason: reason)
@@ -381,7 +381,7 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
     // We need to take special care when we're polling that we send it ASAP
     // Also make sure we're on the emitQueue since we're touching postWait
     private func disconnectPolling(reason: String) {
-        postWait.append(String(SocketEnginePacketType.close.rawValue))
+        postWait.append(String(SocketEnginePacketTypeV1.close.rawValue))
 
         doRequest(for: createRequestForPostWithPostWait()) {_, _, _ in }
         closeOutEngine(reason: reason)
@@ -393,7 +393,7 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
     /// **You shouldn't call this directly**
     public func doFastUpgrade() {
         if waitingForPoll {
-            DefaultSocketLogger.Logger.error("Outstanding poll when switched to WebSockets," +
+            DefaultSocketLoggerV1.Logger.error("Outstanding poll when switched to WebSockets," +
                 "we'll probably disconnect soon. You should report this.", type: logType)
         }
 
@@ -406,7 +406,7 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
     }
 
     private func flushProbeWait() {
-        DefaultSocketLogger.Logger.log("Flushing probe wait", type: logType)
+        DefaultSocketLoggerV1.Logger.log("Flushing probe wait", type: logType)
 
         for waiter in probeWait {
             write(waiter.msg, withType: waiter.type, withData: waiter.data)
@@ -501,7 +501,7 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
     ///
     /// - parameter data: The data to parse.
     public func parseEngineData(_ data: Data) {
-        DefaultSocketLogger.Logger.log("Got binary data: %@", type: "SocketEngine", args: data)
+        DefaultSocketLoggerV1.Logger.log("Got binary data: %@", type: "SocketEngine", args: data)
 
         client?.parseEngineBinaryData(data.subdata(in: 1..<data.endIndex))
     }
@@ -512,16 +512,16 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
     /// - parameter fromPolling: Whether this message is from long-polling.
     ///                          If `true` we might have to fix utf8 encoding.
     public func parseEngineMessage(_ message: String, fromPolling: Bool) {
-        DefaultSocketLogger.Logger.log("Got message: %@", type: logType, args: message)
+        DefaultSocketLoggerV1.Logger.log("Got message: %@", type: logType, args: message)
 
-        let reader = SocketStringReader(message: message)
+        let reader = SocketStringReaderV1(message: message)
         let fixedString: String
 
         if message.hasPrefix("b4") {
             return handleBase64(message: message)
         }
 
-        guard let type = SocketEnginePacketType(rawValue: Int(reader.currentCharacter) ?? -1) else {
+        guard let type = SocketEnginePacketTypeV1(rawValue: Int(reader.currentCharacter) ?? -1) else {
             checkAndHandleEngineError(message)
 
             return
@@ -545,7 +545,7 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
         case .close:
             handleClose(fixedString)
         default:
-            DefaultSocketLogger.Logger.log("Got unknown packet type", type: logType)
+            DefaultSocketLoggerV1.Logger.log("Got unknown packet type", type: logType)
         }
     }
 
@@ -588,7 +588,7 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
     // Moves from long-polling to websockets
     private func upgradeTransport() {
         if ws?.isConnected ?? false {
-            DefaultSocketLogger.Logger.log("Upgrading transport to WebSockets", type: logType)
+            DefaultSocketLoggerV1.Logger.log("Upgrading transport to WebSockets", type: logType)
 
             fastUpgrade = true
             sendPollMessage("", withType: .noop, withData: [])
@@ -601,16 +601,16 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
     /// - parameter msg: The message to send.
     /// - parameter withType: The type of this message.
     /// - parameter withData: Any data that this message has.
-    public func write(_ msg: String, withType type: SocketEnginePacketType, withData data: [Data]) {
+    public func write(_ msg: String, withType type: SocketEnginePacketTypeV1, withData data: [Data]) {
         engineQueue.async {
             guard self.connected else { return }
 
             if self.websocket {
-                DefaultSocketLogger.Logger.log("Writing ws: %@ has data: %@",
+                DefaultSocketLoggerV1.Logger.log("Writing ws: %@ has data: %@",
                                                type: self.logType, args: msg, data.count != 0)
                 self.sendWebSocketMessage(msg, withType: type, withData: data)
             } else if !self.probing {
-                DefaultSocketLogger.Logger.log("Writing poll: %@ has data: %@",
+                DefaultSocketLoggerV1.Logger.log("Writing poll: %@ has data: %@",
                                                type: self.logType, args: msg, data.count != 0)
                 self.sendPollMessage(msg, withType: type, withData: data)
             } else {
@@ -622,7 +622,7 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
     // MARK: Starscream delegate conformance
 
     /// Delegate method for connection.
-    public func websocketDidConnect(socket: WebSocket) {
+    public func websocketDidConnect(socket: WebSocketV1) {
         if !forceWebsockets {
             probing = true
             probeWebSocket()
@@ -634,7 +634,7 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
     }
 
     /// Delegate method for disconnection.
-    public func websocketDidDisconnect(socket: WebSocket, error: NSError?) {
+    public func websocketDidDisconnect(socket: WebSocketV1, error: NSError?) {
         probing = false
 
         if closed {
@@ -658,12 +658,12 @@ public final class SocketEngine : NSObject, URLSessionDelegate, SocketEnginePoll
     }
 }
 
-extension SocketEngine {
+extension SocketEngineV1 {
     // MARK: URLSessionDelegate methods
 
     /// Delegate called when the session becomes invalid.
     public func URLSession(session: URLSession, didBecomeInvalidWithError error: NSError?) {
-        DefaultSocketLogger.Logger.error("Engine URLSession became invalid", type: "SocketEngine")
+        DefaultSocketLoggerV1.Logger.error("Engine URLSession became invalid", type: "SocketEngine")
 
         didError(reason: "Engine URLSession became invalid")
     }

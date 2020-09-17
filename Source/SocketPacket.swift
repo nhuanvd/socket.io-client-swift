@@ -25,7 +25,7 @@
 
 import Foundation
 
-struct SocketPacket {
+struct SocketPacketV1 {
     enum PacketType: Int {
         case connect, disconnect, event, ack, error, binaryEvent, binaryAck
     }
@@ -92,8 +92,8 @@ struct SocketPacket {
         }
         
         guard let jsonSend = try? data.toJSON(), let jsonString = String(data: jsonSend, encoding: .utf8) else {
-            DefaultSocketLogger.Logger.error("Error creating JSON object in SocketPacket.completeMessage",
-                                             type: SocketPacket.logType)
+            DefaultSocketLoggerV1.Logger.error("Error creating JSON object in SocketPacket.completeMessage",
+                                             type: SocketPacketV1.logType)
             
             return message + "[]"
         }
@@ -146,7 +146,7 @@ struct SocketPacket {
     }
 }
 
-extension SocketPacket {
+extension SocketPacketV1 {
     private static func findType(_ binCount: Int, ack: Bool) -> PacketType {
         switch binCount {
         case 0 where !ack:
@@ -162,16 +162,16 @@ extension SocketPacket {
         }
     }
     
-    static func packetFromEmit(_ items: [Any], id: Int, nsp: String, ack: Bool) -> SocketPacket {
+    static func packetFromEmit(_ items: [Any], id: Int, nsp: String, ack: Bool) -> SocketPacketV1 {
         let (parsedData, binary) = deconstructData(items)
-        let packet = SocketPacket(type: findType(binary.count, ack: ack), data: parsedData,
+        let packet = SocketPacketV1(type: findType(binary.count, ack: ack), data: parsedData,
             id: id, nsp: nsp, binary: binary)
         
         return packet
     }
 }
 
-private extension SocketPacket {
+private extension SocketPacketV1 {
     // Recursive function that looks for NSData in collections
     static func shred(_ data: Any, binary: inout [Data]) -> Any {
         let placeholder = ["_placeholder": true, "num": binary.count] as JSON

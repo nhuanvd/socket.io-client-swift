@@ -22,11 +22,11 @@
 import Foundation
 import Security
 
-public protocol SSLTrustValidator {
+public protocol SSLTrustValidatorV1 {
     func isValid(_ trust: SecTrust, domain: String?) -> Bool
 }
 
-open class SSLCert : NSObject {
+open class SSLCertV1 : NSObject {
     var certData: Data?
     var key: SecKey?
     
@@ -53,7 +53,7 @@ open class SSLCert : NSObject {
     }
 }
 
-open class SSLSecurity : SSLTrustValidator {
+open class SSLSecurity : SSLTrustValidatorV1 {
     public var validatedDN = true //should the domain name be validated?
     
     var isReady = false //is the key processing done?
@@ -71,10 +71,10 @@ open class SSLSecurity : SSLTrustValidator {
     public convenience init(usePublicKeys: Bool = false) {
         let paths = Bundle.main.paths(forResourcesOfType: "cer", inDirectory: ".")
         
-        let certs = paths.reduce([SSLCert]()) { (certs: [SSLCert], path: String) -> [SSLCert] in
+        let certs = paths.reduce([SSLCertV1]()) { (certs: [SSLCertV1], path: String) -> [SSLCertV1] in
             var certs = certs
             if let data = NSData(contentsOfFile: path) {
-                certs.append(SSLCert(data: data as Data))
+                certs.append(SSLCertV1(data: data as Data))
             }
             return certs
         }
@@ -90,12 +90,12 @@ open class SSLSecurity : SSLTrustValidator {
      
      - returns: a representation security object to be used with
      */
-    public init(certs: [SSLCert], usePublicKeys: Bool) {
+    public init(certs: [SSLCertV1], usePublicKeys: Bool) {
         self.usePublicKeys = usePublicKeys
         
         if self.usePublicKeys {
             DispatchQueue.global(qos: .default).async {
-                let pubKeys = certs.reduce([SecKey]()) { (pubKeys: [SecKey], cert: SSLCert) -> [SecKey] in
+                let pubKeys = certs.reduce([SecKey]()) { (pubKeys: [SecKey], cert: SSLCertV1) -> [SecKey] in
                     var pubKeys = pubKeys
                     if let data = cert.certData, cert.key == nil {
                         cert.key = self.extractPublicKey(data)
@@ -110,7 +110,7 @@ open class SSLSecurity : SSLTrustValidator {
                 self.isReady = true
             }
         } else {
-            let certificates = certs.reduce([Data]()) { (certificates: [Data], cert: SSLCert) -> [Data] in
+            let certificates = certs.reduce([Data]()) { (certificates: [Data], cert: SSLCertV1) -> [Data] in
                 var certificates = certificates
                 if let data = cert.certData {
                     certificates.append(data)

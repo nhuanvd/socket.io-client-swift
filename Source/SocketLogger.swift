@@ -25,7 +25,7 @@
 import Foundation
 
 /// Represents a class will log client events.
-public protocol SocketLogger : class {
+public protocol SocketLoggerV1 : class {
     // MARK: Properties
 
     /// Whether to log or not
@@ -48,7 +48,7 @@ public protocol SocketLogger : class {
     func error(_ message: String, type: String, args: Any...)
 }
 
-public extension SocketLogger {
+public extension SocketLoggerV1 {
     /// Default implementation.
     func log(_ message: String, type: String, args: Any...) {
         abstractLog("LOG", message: message, type: type, args: args)
@@ -69,8 +69,8 @@ public extension SocketLogger {
     }
 }
 
-class DefaultSocketLogger : SocketLogger {
-    static var Logger: SocketLogger = DefaultSocketLogger()
+class DefaultSocketLoggerV1 : SocketLoggerV1 {
+    static var Logger: SocketLoggerV1 = DefaultSocketLoggerV1()
 
     var log = false
 }

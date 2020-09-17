@@ -40,41 +40,41 @@ import Foundation
 ///
 /// socket.emit("myEvent", CustomData(name: "Erik", age: 24))
 /// ```
-public protocol SocketData {
+public protocol SocketDataV1 {
     // MARK: Methods
 
     /// A representation of self that can sent over socket.io.
-    func socketRepresentation() throws -> SocketData
+    func socketRepresentation() throws -> SocketDataV1
 }
 
-public extension SocketData {
+public extension SocketDataV1 {
     /// Default implementation. Only works for native Swift types and a few Foundation types.
-    func socketRepresentation() -> SocketData {
+    func socketRepresentation() -> SocketDataV1 {
         return self
     }
 }
 
-extension Array : SocketData { }
-extension Bool : SocketData { }
-extension Dictionary : SocketData { }
-extension Double : SocketData { }
-extension Int : SocketData { }
-extension NSArray : SocketData { }
-extension Data : SocketData { }
-extension NSData : SocketData { }
-extension NSDictionary : SocketData { }
-extension NSString : SocketData { }
-extension NSNull : SocketData { }
-extension String : SocketData { }
+extension Array : SocketDataV1 { }
+extension Bool : SocketDataV1 { }
+extension Dictionary : SocketDataV1 { }
+extension Double : SocketDataV1 { }
+extension Int : SocketDataV1 { }
+extension NSArray : SocketDataV1 { }
+extension Data : SocketDataV1 { }
+extension NSData : SocketDataV1 { }
+extension NSDictionary : SocketDataV1 { }
+extension NSString : SocketDataV1 { }
+extension NSNull : SocketDataV1 { }
+extension String : SocketDataV1 { }
 
 /// A typealias for an ack callback.
 public typealias AckCallback = ([Any]) -> Void
 
 /// A typealias for a normal callback.
-public typealias NormalCallback = ([Any], SocketAckEmitter) -> Void
+public typealias NormalCallback = ([Any], SocketAckEmitterV1) -> Void
 
 typealias JSON = [String: Any]
-typealias Probe = (msg: String, type: SocketEnginePacketType, data: [Data])
+typealias Probe = (msg: String, type: SocketEnginePacketTypeV1, data: [Data])
 typealias ProbeWaitQueue = [Probe]
 
 enum Either<E, V> {
